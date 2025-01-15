@@ -26,12 +26,19 @@ const schema = {
     }
 };
 
-const embeddings: FastifyPluginAsync = async (
+export interface SupportPluginOptions {
+    workerTaskTimeout?: number;
+}
+
+const embeddings: FastifyPluginAsync<SupportPluginOptions> = async (
     fastifyInstance,
     opts
 ): Promise<void> => {
     const fastify = fastifyInstance.withTypeProvider<TypeBoxTypeProvider>();
     const debugFlag = process.env.DEBUG === "true";
+    const workerTaskTimeout = opts?.workerTaskTimeout || 15000;
+
+    console.log(`worker task timeout: ${workerTaskTimeout}`);
 
     fastify.post("/", { schema }, async function (request, reply) {
         const supportModels =
@@ -57,10 +64,10 @@ const embeddings: FastifyPluginAsync = async (
                 JSON.stringify(inputItems)
             );
         }
-        const results = await this.embeddingEncoderWorker.exec("encode", [
-            inputItems,
-            model
-        ]);
+        const results = await this.embeddingEncoderWorker
+            .exec("encode", [inputItems, model])
+            .timeout(workerTaskTimeout);
+
         const { embeddings, tokenSize } = results;
         if (debugFlag) {
             console.log(

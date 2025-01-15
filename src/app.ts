@@ -9,12 +9,16 @@ const __dirname = path.dirname(__filename);
 
 export type AppOptions = {
     appConfigFile: string;
+    maxWorkers: number;
+    minWorkers: number;
     // Place your custom options for app below here.
 } & Partial<AutoloadPluginOptions>;
 
 // Pass --options via CLI arguments in command to enable these options.
 const options: AppOptions = {
-    appConfigFile: ""
+    appConfigFile: "",
+    maxWorkers: 1,
+    minWorkers: 1
 };
 
 const app: FastifyPluginAsync<AppOptions> = async (

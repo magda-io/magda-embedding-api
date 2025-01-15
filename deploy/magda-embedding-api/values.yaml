@@ -57,6 +57,18 @@ closeGraceDelay: 25000
 # Depends on the model size, you might also want to adjust the `resources.limits.memory` & `resources.requests.memory`value.
 appConfig: {}
 
+# -- (int) The maximum number of workers that run the model to serve the request.
+# @default -- Default to 1.
+maxWorkers: 1
+
+# -- (int) The maximum number of workers that run the model to serve the request.
+# @default -- Default to 1.
+minWorkers: 1
+
+# -- (int) The maximum time in milliseconds that a worker can run before being killed.
+# @default -- Default to 15000 (15 seconds).
+workerTaskTimeout: 15000
+
 # image setting loadding order: (from higher priority to lower priority)
 # - Values.image.x
 # - Values.defaultImage.x

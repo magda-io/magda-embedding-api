@@ -79,6 +79,8 @@ Kubernetes: `>= 1.21.0`
 | livenessProbe.successThreshold | int | `1` |  |
 | livenessProbe.timeoutSeconds | int | `5` |  |
 | logLevel | string | `"warn"` | The log level of the application. one of 'fatal', 'error', 'warn', 'info', 'debug', 'trace';  also 'silent' is supported to disable logging.  Any other value defines a custom level and requires supplying a level value via levelVal. |
+| maxWorkers | int | Default to 1. | The maximum number of workers that run the model to serve the request. |
+| minWorkers | int | Default to 1. | The maximum number of workers that run the model to serve the request. |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` |  |
 | pluginTimeout | int | Default to 180000 (180 seconds). | The maximum amount of time in milliseconds in which a fastify plugin can load.  If not, ready will complete with an Error with code 'ERR_AVVIO_PLUGIN_TIMEOUT'. |
@@ -120,6 +122,7 @@ Kubernetes: `>= 1.21.0`
 | startupProbe.timeoutSeconds | int | `5` |  |
 | tolerations | list | `[]` |  |
 | topologySpreadConstraints | list | `[]` | This is the pod topology spread constraints https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/ |
+| workerTaskTimeout | int | Default to 15000 (15 seconds). | The maximum time in milliseconds that a worker can run before being killed. |
 
 ### Build & Run for Local Development
 

@@ -11,16 +11,24 @@ declare module "fastify" {
 
 export interface SupportPluginOptions {
     // Specify Support plugin options here
+    maxWorkers?: number;
+    minWorkers?: number;
 }
 
 // The use of fastify-plugin is required to be able
 // to export the decorators to the outer scope
 export default fp<SupportPluginOptions>(
     async (fastify, opts) => {
-        console.log("set up encoder worker pool...");
+        const maxWorkers = opts?.maxWorkers || 1;
+        const minWorkers = opts?.minWorkers || 1;
+
+        console.log(
+            `set up encoder worker pool with maxWorker: ${maxWorkers} / minWorkers: ${minWorkers}...`
+        );
+
         const pool = workerpool.pool("./dist/libs/encoderWorker.js", {
-            maxWorkers: 1,
-            minWorkers: 1,
+            maxWorkers,
+            minWorkers,
             workerType: "process"
         });
         fastify.decorate("embeddingEncoderWorker", pool);

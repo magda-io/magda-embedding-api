@@ -105,6 +105,12 @@ spec:
         - "start"
         - "dist/app.js"
         - "--"
+        - "--minWorkers"
+        - {{ .Values.minWorkers | quote }}
+        - "--maxWorkers"
+        - {{ .Values.maxWorkers | quote }}
+        - "--workerTaskTimeout"
+        - {{ .Values.workerTaskTimeout | quote }}
         - "--appConfigFile"
         - "/etc/config/appConfig.json"
         {{- if .Values.readinessProbe }}
