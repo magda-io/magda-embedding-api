@@ -282,6 +282,8 @@ class EmbeddingEncoder {
         }
         let tokenSize = 0;
         const embeddings: number[][] = [];
+        // why not pass a list of sentences to doEncode?
+        // because performance drops and memory consumption increase significantly (often lead to OOM kill) when passing a list of sentences
         for (let i = 0; i < sentences.length; i++) {
             const output = await this.doEncode(sentences[i], model);
             tokenSize += output.tokenSize;
@@ -290,31 +292,11 @@ class EmbeddingEncoder {
         return { embeddings, tokenSize };
     }
 
-    async doEncode(
+    private async doEncode(
         sentences: string | string[],
         model: string = this.defaultModel
     ) {
         const { extraction_config } = this.getModelByName(model);
-
-        // if(typeof sentences === "string") {
-        //     sentences = [sentences];
-        // }
-
-        // let tokenSize = 0;
-        // const embeddings: number[][] = [];
-
-        // for(let i = 0; i < sentences.length; i++) {
-        //     const output = await this.featureExtraction(sentences[i], {
-        //         ...extraction_config
-        //     });
-
-        //     const result = output[0].tolist();
-        //     const textEmbeddings = (result as number[][])[0];
-        //     const textTokenSize = output[1].input_ids.size as number;
-
-        //     embeddings.push(textEmbeddings);
-        //     tokenSize += textTokenSize;
-        // }
 
         const output = await this.featureExtraction(sentences, {
             ...extraction_config
