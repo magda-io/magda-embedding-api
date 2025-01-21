@@ -18,21 +18,11 @@ export interface ExtractionConfig {
     precision?: "binary" | "ubinary";
 }
 
-// export const defaultModel: ModelItem = {
-//     name: "Alibaba-NLP/gte-base-en-v1.5",
-//     dtype: "fp32",
-//     extraction_config: {
-//         pooling: "cls",
-//         normalize: true,
-//         quantize: false
-//     }
-// };
-
 export const defaultModel: ModelItem = {
-    name: "Xenova/bge-base-en-v1.5",
-    dtype: "fp16",
+    name: "Alibaba-NLP/gte-base-en-v1.5",
+    dtype: "q8",
     extraction_config: {
-        pooling: "mean",
+        pooling: "cls",
         normalize: true,
         quantize: false
     }

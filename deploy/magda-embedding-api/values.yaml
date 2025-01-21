@@ -66,8 +66,8 @@ maxWorkers: 1
 minWorkers: 1
 
 # -- (int) The maximum time in milliseconds that a worker can run before being killed.
-# @default -- Default to 15000 (15 seconds).
-workerTaskTimeout: 15000
+# @default -- Default to 60000 (60 seconds).
+workerTaskTimeout: 60000
 
 # image setting loadding order: (from higher priority to lower priority)
 # - Values.image.x
@@ -88,12 +88,12 @@ defaultImage:
 nameOverride: ""
 fullnameOverride: ""
 
-replicas: 1
+replicas: 2
 
 autoscaling:
   hpa:
     enabled: false
-    minReplicas: 1
+    minReplicas: 2
     maxReplicas: 3
     targetCPU: 90
     targetMemory: ""  
@@ -209,4 +209,4 @@ resources:
     # -- (string) the memory limit of the container
     # Due to [this issue of ONNX runtime](https://github.com/microsoft/onnxruntime/issues/15080), the peak memory usage of the service is much higher than the model file size. 
     # When change the default model, be sure to test the peak memory usage of the service before setting the memory limit.
-    memory: "2000M"
+    memory: "1100M"
