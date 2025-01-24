@@ -209,7 +209,7 @@ class EmbeddingEncoder {
 
         // Run tokenization
         const model_inputs = this.tokenizer(texts, {
-            padding: true,
+            padding: typeof texts !== "string",
             truncation: true,
             max_length:
                 typeof max_length !== "undefined" && max_length > 0
@@ -334,6 +334,8 @@ class EmbeddingEncoder {
                 `Model \`${model}\` is not supported. Supported models: ${this.supportModels.join(", ")}`
             );
         }
+        const modelOpts = this.getModelByName(model);
+        const { max_length } = modelOpts;
         opts = {
             ...opts,
             ...(typeof opts.padding !== "boolean" ? { padding: true } : {}),
@@ -343,8 +345,12 @@ class EmbeddingEncoder {
         };
 
         return this.tokenizer(texts, {
-            padding: true,
-            truncation: true
+            padding: typeof texts !== "string",
+            truncation: true,
+            max_length:
+                typeof max_length !== "undefined" && max_length > 0
+                    ? max_length
+                    : DEFAULT_MAX_LENGTH
         });
     }
 }
