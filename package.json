@@ -22,7 +22,7 @@
     "prebuild": "rimraf dist",
     "build": "tsc",
     "watch": "tsc -w",
-    "start": "npm run build && fastify start -T 60000 -l info dist/app.js",
+    "start": "npm run build && fastify start -T 60000 -l info dist/app.js -- --workerTaskTimeout 10000",
     "download-default-model": "node ./dist/loadDefaultModel.js",
     "dev": "npm run build && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch\" \"npm:dev:start\"",
     "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js",
