@@ -100,7 +100,7 @@ Kubernetes: `>= 1.21.0`
 | readinessProbe.successThreshold | int | `1` |  |
 | readinessProbe.timeoutSeconds | int | `5` |  |
 | replicas | int | `2` |  |
-| resources.limits.memory | string | `"1100M"` | the memory limit of the container Due to [this issue of ONNX runtime](https://github.com/microsoft/onnxruntime/issues/15080), the peak memory usage of the service is much higher than the model file size.  When change the default model, be sure to test the peak memory usage of the service before setting the memory limit. |
+| resources.limits.memory | string | `"2000M"` | the memory limit of the container Due to [this issue of ONNX runtime](https://github.com/microsoft/onnxruntime/issues/15080), the peak memory usage of the service is much higher than the model file size.  When change the default model, be sure to test the peak memory usage of the service before setting the memory limit. When test your model memory requirement, please note that the memory usage of the model often goes much higher with long context length. E.g. the default model supports up to 8192 tokens, but when the content go beyond 512 tokens, the memory usage will be much higher (requires around 2G). |
 | resources.requests.cpu | string | `"100m"` |  |
 | resources.requests.memory | string | `"850M"` | the memory request of the container Once the model is loaded, the memory usage of the service for serving request would be much lower. Set to 850M for default model. |
 | service.annotations | object | `{}` |  |
