@@ -18,8 +18,11 @@ export interface ExtractionConfig {
     precision?: "binary" | "ubinary";
 }
 
+export const DEFAULT_MAX_LENGTH = 512;
+
 export const defaultModel: ModelItem = {
     name: "Alibaba-NLP/gte-base-en-v1.5",
+    max_length: 1024,
     dtype: "q8",
     extraction_config: {
         pooling: "cls",
@@ -37,6 +40,7 @@ export const DEFAULT_EXTRACTION_CONFIG: ExtractionConfig = {
 
 export interface ModelItem {
     name: string;
+    max_length?: number;
     // whether or not this model is the default model
     // if all models are not default, the first one will be used as default
     default?: boolean;
@@ -187,7 +191,8 @@ class EmbeddingEncoder {
 
     async featureExtraction(
         texts: string | string[],
-        opts: FeatureExtractionPipelineOptions = {}
+        opts: FeatureExtractionPipelineOptions = {},
+        max_length: number | undefined = undefined
     ) {
         if (!this.tokenizer || !this.model) {
             throw new Error("Tokenizer or model not initialized");
@@ -205,7 +210,13 @@ class EmbeddingEncoder {
         // Run tokenization
         const model_inputs = this.tokenizer(texts, {
             padding: true,
-            truncation: true
+            truncation: true,
+            max_length:
+                typeof max_length !== "undefined" && max_length > 0
+                    ? max_length
+                    : this.model.config.max_position_embeddings > 0
+                      ? this.model.config.max_position_embeddings
+                      : DEFAULT_MAX_LENGTH
         });
 
         // Run model
@@ -286,11 +297,15 @@ class EmbeddingEncoder {
         sentences: string | string[],
         model: string = this.defaultModel
     ) {
-        const { extraction_config } = this.getModelByName(model);
+        const { extraction_config, max_length } = this.getModelByName(model);
 
-        const output = await this.featureExtraction(sentences, {
-            ...extraction_config
-        });
+        const output = await this.featureExtraction(
+            sentences,
+            {
+                ...extraction_config
+            },
+            max_length
+        );
 
         const embeddings = output[0].tolist() as number[][];
         const tokenSize = output[1].input_ids.size as number;

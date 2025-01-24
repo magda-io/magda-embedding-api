@@ -204,11 +204,11 @@ resources:
     cpu: "100m"
     # -- (string) the memory request of the container
     # Once the model is loaded, the memory usage of the service for serving request would be much lower. Set to 850M for default model.
-    memory: "850M"
+    memory: "650M"
   limits:
     # -- (string) the memory limit of the container
     # Due to [this issue of ONNX runtime](https://github.com/microsoft/onnxruntime/issues/15080), the peak memory usage of the service is much higher than the model file size. 
     # When change the default model, be sure to test the peak memory usage of the service before setting the memory limit.
     # When test your model memory requirement, please note that the memory usage of the model often goes much higher with long context length.
-    # E.g. the default model supports up to 8192 tokens, but when the content go beyond 512 tokens, the memory usage will be much higher (requires around 2G).
-    memory: "2000M"
+    # E.g. the default model supports up to 8192 tokens (default max_length set to 1024), but when the content go beyond 512 tokens, the memory usage will be much higher (requires around 2G).
+    memory: "850M"
