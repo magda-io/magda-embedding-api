@@ -49,7 +49,7 @@ Kubernetes: `>= 1.21.0`
 | appConfig | object | `{}` | Application configuration of the service. You can supply a list of key-value pairs to be used as the application configuration. Currently, the only supported config field is `modelList`. Via the `modelList` field, you can specify a list of LLM models that the service supports. Although you can specify multiple models, only one model will be used at this moment. Each model item have the following fields:  <ul> <li> `name` (string): The huggingface registered model name. We only support ONNX model at this moment. This field is required. </li> <li> `default` (bool): Optional; Whether this model is the default model. If not specified, the first model in the list will be the default model. Only default model will be loaded. </li> <li> `quantized` (bool): Optional; Whether the quantized version of model will be used. If not specified, the quantized version model will be loaded. </li> <li> `config` (object): Optional; The configuration object that will be passed to the model.  </li> <li> `cache_dir` (string): Optional; The cache directory of the downloaded models. If not specified, the default cache directory will be used. </li> <li> `local_files_only` (bool): Optional; Whether to only load the model from local files. If not specified, the model will be downloaded from the huggingface model hub. </li> <li> `revision` (string) Optional, Default to 'main'; The specific model version to use. It can be a branch name, a tag name, or a commit id.    Since we use a git-based system for storing models and other artifacts on huggingface.co, so `revision` can be any identifier allowed by git. NOTE: This setting is ignored for local requests. </li> <li> `model_file_name` (string) Optional; </li> <li> `extraction_config` (object) Optional; The configuration object that will be passed to the model extraction function for embedding generation. <br/>   <ul>   <li> `pooling`: ('none' or 'mean' or 'cls') Default to 'none'. The pooling method to use. </li>   <li> `normalize`: (bool) Default to true. Whether or not to normalize the embeddings in the last dimension. </li>   <li> `quantize`: (bool) Default to `false`. Whether or not to quantize the embeddings. </li>   <li> `precision`: ("binary" or "ubinary") default to "binary". The precision to use for quantization. Only used when `quantize` is true. </li>   </ul>   </li> </ul> Please note: The released docker image only contains "Alibaba-NLP/gte-base-en-v1.5" model.  If you specify other models, the server will download the model from the huggingface model hub at the startup. You might want to adjust the `startupProbe` settings to accommodate the model downloading time. Depends on the model size, you might also want to adjust the `resources.limits.memory` & `resources.requests.memory`value. |
 | autoscaling.hpa.enabled | bool | `false` |  |
 | autoscaling.hpa.maxReplicas | int | `3` |  |
-| autoscaling.hpa.minReplicas | int | `1` |  |
+| autoscaling.hpa.minReplicas | int | `2` |  |
 | autoscaling.hpa.targetCPU | int | `90` |  |
 | autoscaling.hpa.targetMemory | string | `""` |  |
 | bodyLimit | int | Default to 10485760 (10MB). | Defines the maximum payload, in bytes, that the server is allowed to accept |
@@ -79,9 +79,11 @@ Kubernetes: `>= 1.21.0`
 | livenessProbe.successThreshold | int | `1` |  |
 | livenessProbe.timeoutSeconds | int | `5` |  |
 | logLevel | string | `"warn"` | The log level of the application. one of 'fatal', 'error', 'warn', 'info', 'debug', 'trace';  also 'silent' is supported to disable logging.  Any other value defines a custom level and requires supplying a level value via levelVal. |
+| maxWorkers | int | Default to 1. | The maximum number of workers that run the model to serve the request. |
+| minWorkers | int | Default to 1. | The maximum number of workers that run the model to serve the request. |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` |  |
-| pluginTimeout | int | Default to 10000 (10 seconds). | The maximum amount of time in milliseconds in which a fastify plugin can load.  If not, ready will complete with an Error with code 'ERR_AVVIO_PLUGIN_TIMEOUT'. |
+| pluginTimeout | int | Default to 180000 (180 seconds). | The maximum amount of time in milliseconds in which a fastify plugin can load.  If not, ready will complete with an Error with code 'ERR_AVVIO_PLUGIN_TIMEOUT'. |
 | podAnnotations | object | `{}` |  |
 | podSecurityContext.runAsNonRoot | bool | `true` |  |
 | podSecurityContext.runAsUser | int | `1000` |  |
@@ -97,10 +99,10 @@ Kubernetes: `>= 1.21.0`
 | readinessProbe.periodSeconds | int | `20` |  |
 | readinessProbe.successThreshold | int | `1` |  |
 | readinessProbe.timeoutSeconds | int | `5` |  |
-| replicas | int | `1` |  |
-| resources.limits.memory | string | `"1100M"` | the memory limit of the container Due to [this issue of ONNX runtime](https://github.com/microsoft/onnxruntime/issues/15080), the peak memory usage of the service is much higher than the model file size.  When change the default model, be sure to test the peak memory usage of the service before setting the memory limit. quantized model will be used by default, the memory limit is set to 1100M to accommodate the default model size. |
+| replicas | int | `2` |  |
+| resources.limits.memory | string | `"850M"` | the memory limit of the container Due to [this issue of ONNX runtime](https://github.com/microsoft/onnxruntime/issues/15080), the peak memory usage of the service is much higher than the model file size.  When change the default model, be sure to test the peak memory usage of the service before setting the memory limit. When test your model memory requirement, please note that the memory usage of the model often goes much higher with long context length. E.g. the default model supports up to 8192 tokens (default max_length set to 1024), but when the content go beyond 512 tokens, the memory usage will be much higher (requires around 2G). |
 | resources.requests.cpu | string | `"100m"` |  |
-| resources.requests.memory | string | `"650M"` | the memory request of the container Once the model is loaded, the memory usage of the service for serving request would be much lower. Set to 650M for default model. |
+| resources.requests.memory | string | `"650M"` | the memory request of the container Once the model is loaded, the memory usage of the service for serving request would be much lower. Set to 850M for default model. |
 | service.annotations | object | `{}` |  |
 | service.httpPortName | string | `"http"` |  |
 | service.labels | object | `{}` |  |
@@ -120,6 +122,7 @@ Kubernetes: `>= 1.21.0`
 | startupProbe.timeoutSeconds | int | `5` |  |
 | tolerations | list | `[]` |  |
 | topologySpreadConstraints | list | `[]` | This is the pod topology spread constraints https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/ |
+| workerTaskTimeout | int | Default to 60000 (60 seconds). | The maximum time in milliseconds that a worker can run before being killed. |
 
 ### Build & Run for Local Development
 

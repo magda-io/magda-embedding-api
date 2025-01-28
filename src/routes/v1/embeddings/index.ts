@@ -26,14 +26,26 @@ const schema = {
     }
 };
 
-const embeddings: FastifyPluginAsync = async (
+export interface SupportPluginOptions {
+    workerTaskTimeout?: number;
+}
+
+const embeddings: FastifyPluginAsync<SupportPluginOptions> = async (
     fastifyInstance,
     opts
 ): Promise<void> => {
     const fastify = fastifyInstance.withTypeProvider<TypeBoxTypeProvider>();
+    const debugFlag = process.env.DEBUG === "true";
+    const workerTaskTimeout = opts?.workerTaskTimeout || 15000;
+
+    console.log(`worker task timeout: ${workerTaskTimeout}`);
 
     fastify.post("/", { schema }, async function (request, reply) {
-        const supportModels = this.embeddingGenerator.supportModels;
+        const supportModels =
+            await this.embeddingEncoderWorker.exec("getSupportModels");
+        const defaultModelName = await this.embeddingEncoderWorker.exec(
+            "getDefaultModelName"
+        );
         if (
             request.body.model &&
             supportModels.indexOf(request.body.model) === -1
@@ -42,17 +54,27 @@ const embeddings: FastifyPluginAsync = async (
                 `Model \`${request.body.model}\` is not supported. Supported models: ${supportModels.join(", ")}`
             );
         }
-        const model =
-            request.body.model || fastify.embeddingGenerator.defaultModelName;
+        const model = request.body.model || defaultModelName;
         const inputItems = Array.isArray(request.body.input)
             ? request.body.input
             : [request.body.input];
-        const results = await this.embeddingGenerator.generate(
-            inputItems,
-            model
-        );
+        if (debugFlag) {
+            console.log(
+                "Received encode request. inputItems: ",
+                JSON.stringify(inputItems)
+            );
+        }
+        const results = await this.embeddingEncoderWorker
+            .exec("encode", [inputItems, model])
+            .timeout(workerTaskTimeout);
+
         const { embeddings, tokenSize } = results;
-        const data = embeddings.map((embedding, index) => ({
+        if (debugFlag) {
+            console.log(
+                `Encode request done. embeddings: ${embeddings[0].length} tokenSize: ${tokenSize}`
+            );
+        }
+        const data = embeddings.map((embedding: number[][], index: number) => ({
             index,
             embedding,
             object: "embedding"

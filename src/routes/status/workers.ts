@@ -7,7 +7,11 @@ import { HttpErrorResponseSchema } from "../../libs/types.js";
 const schema = {
     response: {
         200: Type.Object({
-            status: Type.Boolean()
+            totalWorkers: Type.Integer(),
+            busyWorkers: Type.Integer(),
+            idleWorkers: Type.Integer(),
+            pendingTasks: Type.Integer(),
+            activeTasks: Type.Integer()
         }),
         503: HttpErrorResponseSchema
     }
@@ -15,17 +19,17 @@ const schema = {
 
 export const WAIT_TIME_MS = 500;
 
-const readiness = fp(
+const workers = fp(
     async (fastifyInstance, opts) => {
         const fastify = fastifyInstance.withTypeProvider<TypeBoxTypeProvider>();
 
-        fastify.get("/readiness", { schema }, async function (request, reply) {
-            return { status: true };
+        fastify.get("/workers", { schema }, async function (request, reply) {
+            return this.embeddingEncoderWorker.stats();
         });
     },
     {
         fastify: "4.x",
-        name: "/status/readiness",
+        name: "/status/workers",
         dependencies: ["@fastify/sensible"]
     }
 );
@@ -33,7 +37,7 @@ const readiness = fp(
 // wrapping the plugin created using fastify-plugin to make route prefixing work
 // https://fastify.dev/docs/latest/Reference/Routes/#route-prefixing-and-fastify-plugin
 const routes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
-    fastify.register(readiness);
+    fastify.register(workers);
 };
 
 export default routes;

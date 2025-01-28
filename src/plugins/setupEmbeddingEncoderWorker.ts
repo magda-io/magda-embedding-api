@@ -1,0 +1,48 @@
+import fp from "fastify-plugin";
+//import path from "path";
+import workerpool, { Pool } from "workerpool";
+
+// When using .decorate you have to specify added properties for Typescript
+declare module "fastify" {
+    export interface FastifyInstance {
+        embeddingEncoderWorker: Pool;
+    }
+}
+
+export interface SupportPluginOptions {
+    // Specify Support plugin options here
+    maxWorkers?: number;
+    minWorkers?: number;
+}
+
+// The use of fastify-plugin is required to be able
+// to export the decorators to the outer scope
+export default fp<SupportPluginOptions>(
+    async (fastify, opts) => {
+        const maxWorkers = opts?.maxWorkers || 1;
+        const minWorkers = opts?.minWorkers || 1;
+
+        console.log(
+            `set up encoder worker pool with maxWorker: ${maxWorkers} / minWorkers: ${minWorkers}...`
+        );
+
+        const pool = workerpool.pool("./dist/libs/encoderWorker.js", {
+            maxWorkers,
+            minWorkers,
+            workerType: "process"
+        });
+        fastify.decorate("embeddingEncoderWorker", pool);
+
+        fastify.addHook("onClose", async function (instance) {
+            await instance.embeddingEncoderWorker.terminate();
+        });
+
+        await pool.exec("waitTillReady");
+        console.log("encoder worker pool is ready!");
+    },
+    {
+        fastify: "4.x",
+        name: "setupEmbeddingEncoderWorker",
+        dependencies: ["@fastify/sensible", "loadAppConfig"]
+    }
+);

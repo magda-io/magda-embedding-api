@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import * as assert from "node:assert";
-import { build } from "./helper.js";
-import { defaultModel } from "../src/libs/EmbeddingGenerator.js";
+import { build, requestEmbeddings, deepCloseTo } from "./helper.js";
+import { defaultModel } from "../src/libs/EmbeddingEncoder.js";
 import { OpenAIEmbeddings } from "@langchain/openai";
 
 test("Should work with @langchain/openai", async (t) => {

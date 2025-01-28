@@ -9,7 +9,7 @@ import {
     FeatureExtractionPipelineOptions,
     mean_pooling,
     PretrainedOptions
-} from "@xenova/transformers";
+} from "@huggingface/transformers";
 
 export interface ExtractionConfig {
     pooling?: "none" | "mean" | "cls";
@@ -18,9 +18,12 @@ export interface ExtractionConfig {
     precision?: "binary" | "ubinary";
 }
 
+export const DEFAULT_MAX_LENGTH = 512;
+
 export const defaultModel: ModelItem = {
     name: "Alibaba-NLP/gte-base-en-v1.5",
-    quantized: true,
+    max_length: 1024,
+    dtype: "q8",
     extraction_config: {
         pooling: "cls",
         normalize: true,
@@ -37,6 +40,7 @@ export const DEFAULT_EXTRACTION_CONFIG: ExtractionConfig = {
 
 export interface ModelItem {
     name: string;
+    max_length?: number;
     // whether or not this model is the default model
     // if all models are not default, the first one will be used as default
     default?: boolean;
@@ -47,11 +51,12 @@ export interface ModelItem {
     revision?: string;
     model_file_name?: string;
     extraction_config?: ExtractionConfig;
+    dtype?: "fp32" | "fp16" | "q8" | "int8" | "uint8" | "q4" | "bnb4" | "q4f16";
 }
 
 export type ConfigModelListItem = string | ModelItem;
 
-class EmbeddingGenerator {
+class EmbeddingEncoder {
     protected ready: boolean = false;
     protected readPromise: Promise<void>;
 
@@ -83,7 +88,7 @@ class EmbeddingGenerator {
      * - set this.defaultModel and this.supportModelNames
      *
      * @private
-     * @memberof EmbeddingGenerator
+     * @memberof embeddingEncoder
      */
     private processModelList(modelList: ConfigModelListItem[]) {
         const modelNames: string[] = [];
@@ -163,7 +168,7 @@ class EmbeddingGenerator {
 
         const defaultPretrainedOptions = {
             quantized: true,
-            config: null,
+            config: undefined,
             local_files_only: false,
             revision: "main"
         };
@@ -184,9 +189,10 @@ class EmbeddingGenerator {
         );
     }
 
-    private async featureExtraction(
+    async featureExtraction(
         texts: string | string[],
-        opts: FeatureExtractionPipelineOptions = {}
+        opts: FeatureExtractionPipelineOptions = {},
+        max_length: number | undefined = undefined
     ) {
         if (!this.tokenizer || !this.model) {
             throw new Error("Tokenizer or model not initialized");
@@ -203,8 +209,14 @@ class EmbeddingGenerator {
 
         // Run tokenization
         const model_inputs = this.tokenizer(texts, {
-            padding: true,
-            truncation: true
+            padding: typeof texts !== "string",
+            truncation: true,
+            max_length:
+                typeof max_length !== "undefined" && max_length > 0
+                    ? max_length
+                    : this.model.config.max_position_embeddings > 0
+                      ? this.model.config.max_position_embeddings
+                      : DEFAULT_MAX_LENGTH
         });
 
         // Run model
@@ -262,15 +274,38 @@ class EmbeddingGenerator {
         }
     }
 
-    async generate(
+    async encode(
         sentences: string | string[],
         model: string = this.defaultModel
     ) {
-        const { extraction_config } = this.getModelByName(model);
+        if (typeof sentences === "string") {
+            sentences = [sentences];
+        }
+        let tokenSize = 0;
+        const embeddings: number[][] = [];
+        // why not pass a list of sentences to doEncode?
+        // because performance drops and memory consumption increase significantly (often lead to OOM kill) when passing a list of sentences
+        for (let i = 0; i < sentences.length; i++) {
+            const output = await this.doEncode(sentences[i], model);
+            tokenSize += output.tokenSize;
+            embeddings.push(output.embeddings[0]);
+        }
+        return { embeddings, tokenSize };
+    }
 
-        const output = await this.featureExtraction(sentences, {
-            ...extraction_config
-        });
+    private async doEncode(
+        sentences: string | string[],
+        model: string = this.defaultModel
+    ) {
+        const { extraction_config, max_length } = this.getModelByName(model);
+
+        const output = await this.featureExtraction(
+            sentences,
+            {
+                ...extraction_config
+            },
+            max_length
+        );
 
         const embeddings = output[0].tolist() as number[][];
         const tokenSize = output[1].input_ids.size as number;
@@ -299,6 +334,8 @@ class EmbeddingGenerator {
                 `Model \`${model}\` is not supported. Supported models: ${this.supportModels.join(", ")}`
             );
         }
+        const modelOpts = this.getModelByName(model);
+        const { max_length } = modelOpts;
         opts = {
             ...opts,
             ...(typeof opts.padding !== "boolean" ? { padding: true } : {}),
@@ -308,10 +345,14 @@ class EmbeddingGenerator {
         };
 
         return this.tokenizer(texts, {
-            padding: true,
-            truncation: true
+            padding: typeof texts !== "string",
+            truncation: true,
+            max_length:
+                typeof max_length !== "undefined" && max_length > 0
+                    ? max_length
+                    : DEFAULT_MAX_LENGTH
         });
     }
 }
 
-export default EmbeddingGenerator;
+export default EmbeddingEncoder;
