@@ -17,8 +17,8 @@ appConfig:
   modelList:
   # use alternative model for embedding
   - name: Xenova/bge-small-en-v1.5
-    # set quantized to false to use the non-quantized version of the model
-    # by default, the quantized version of the model will be used
+    # You can set `dtype` to select the precision of the model
+    # Available values: "fp32" | "fp16" | "q8" | "int8" | "uint8" | "q4" | "bnb4" | "q4f16"
     dtype: "q8"
     # optional set max length of the input text
     # if not set, the value in model config will be used

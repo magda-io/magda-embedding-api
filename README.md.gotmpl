@@ -19,21 +19,23 @@ An embedding is a vector, or a list, of floating-point numbers. The distance bet
 
 This embedding API is created for [Magda](https://github.com/magda-io/magda)'s vector / hybrid search solution. The API interface is compatible with OpenAI's `embeddings` API to make it easier to reuse existing tools & libraries.
 
+> the diagram below shows Magda's use case
+
+![architecture](docs/architecture.png)
+
 ### Model Selection & Resources requirements
 
-> Only the default mode, will be included in the docker image to speed up the starting up. 
-> If you want to use a different model (via `appConfig.modelList`), besides the resources requirements consideration here, you might also want to increase `pluginTimeout` and adjsut `startupProbe` to allow the longer starting up time introduced by the model downloading.
+> Only the default mode, will be included in the docker image to speed up the starting up.
+> If you want to use a different model (via `appConfig.modelList`), besides the resources requirements consideration here, you might also want to increase `pluginTimeout` and adjust `startupProbe` to allow the longer starting up time introduced by the model downloading.
 
 Due to [this issue of ONNX runtime](https://github.com/microsoft/onnxruntime/issues/15080), the peak memory usage of the service is much higher than the model file size (2 times higher).
 e.g. For the default 500MB model file, the peak memory usage could up to 1.8GB - 2GB.
-However, the memory usage will drop back to much lower (for default model, it's aroudn 800MB-900MB) after the model is loaded.
+However, the memory usage will drop back to much lower (for default model, it's around 800MB-900MB) after the model is loaded.
 Please make sure your Kubernetes cluster has enough resources to run the service.
 
-When specify `appConfig.modelList`, you can set `quantized` to `false` to use a quantized model. Please refer to helm chart document below for more informaiton. You can also find an example from this config file [here](./deploy/test-deploy.yaml).
+When specify `appConfig.modelList`, you can set the value of `dtype` field to select precision (quantizations) of the model. The possible value are: full-precision ("fp32"), half-precision ("fp16"), 8-bit ("q8", "int8", "uint8"), and 4-bit ("q4", "bnb4", "q4f16"). Please refer to helm chart document below for more information. You can also find an example from this config file [here](./deploy/test-deploy.yaml).
 
 > Memory consumption test result for a few selected models can be found: https://github.com/magda-io/magda-embedding-api/issues/2
-
-
 
 {{ template "chart.maintainersSection" . }}
 
