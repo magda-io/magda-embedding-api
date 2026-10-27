@@ -1,4 +1,4 @@
-FROM node:18-bullseye-slim
+FROM node:22-bookworm-slim
 ENV NODE_ENV=production
 
 # follow openshfit guidelines for supporting arbitrary user IDs
