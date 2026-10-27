@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.2.0
+
+- Upgrade to Node.js 22: the docker image now uses `node:22-bookworm-slim` (was `node:18-bullseye-slim`; Node.js 18 & Debian 11 are end-of-life), and CI uses Node.js 22
+
 ## v1.1.0
 
 - Rename EmbeddingGenerator to EmbeddingEncoder
